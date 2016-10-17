@@ -30,12 +30,24 @@
     <ClInclude Include="RazorUriCore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ParseUri.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UriParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RazorUriCore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ParseUri.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
