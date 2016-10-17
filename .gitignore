@@ -66,6 +66,8 @@ ipch/
 *.sdf
 *.cachefile
 *.opendb
+*.db
+*.VC.db
 
 # Visual Studio profiler
 *.psess
