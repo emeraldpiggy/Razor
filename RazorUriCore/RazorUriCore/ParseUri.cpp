@@ -1,12 +1,12 @@
 #include "stdafx.h"
-#include "RazorUriCore.h"
 #include "ParseUri.h"
 
-#include <algorithm>
-#include <cstring>
-#include <stdlib.h>
+#include <locale>
+#include <codecvt>
+#include <functional>
+#include <vector>
 
-bool UriParser::ParseUri::IsValidScheme(const string& schemeName)
+bool UriParser::ParseUri::IsValidScheme(const wstring& schemeName)
 {
 	for (auto s : schemeName)
 	{
@@ -19,175 +19,126 @@ bool UriParser::ParseUri::IsValidScheme(const string& schemeName)
 }
 
 
-UriParser::ParseUri UriParser::ParseUri::Parse(const string& uri)
+static wstring ConvertStringToWString(const string& str)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+	return converter.from_bytes(str);
+}
+
+static string WStringToString(const wstring& wstr)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+	return converter.to_bytes(wstr);
+}
+
+UriParser::ParseUri UriParser::ParseUri::Parse(const wstring &uri)
 {
 	UriParser::ParseUri result;
-	const char* curStr = uri.c_str();
 
-	const char* localStr = strchr(curStr, ':');
-	if (!localStr)
+	typedef wstring::const_iterator iterator_t;
+
+	if (uri.length() == 0)
 	{
-		return ParseUri(NoUrlCharacter);
+		return ParseUri(NoUriCharacter);
 	}
 
-	result.Scheme = string(curStr, localStr - curStr);
+	iterator_t uriEnd = uri.end();
 
-	if (!IsValidScheme(result.Scheme))
+	iterator_t queryStart = find(uri.begin(), uriEnd, L'?');
+	iterator_t fragmentStart = find(uri.begin(), uriEnd, L'#');
+
+	iterator_t schemeStart = uri.begin();
+	iterator_t schemeEnd = find(schemeStart, uriEnd, L':');
+
+	if (schemeEnd != uriEnd)
 	{
+		wstring scheme = &*(schemeEnd);
+		if ((scheme.length() > 3) && (scheme.substr(0, 3) == L"://"))
+		{
+
+			result.WScheme = wstring(schemeStart, schemeEnd);
+			schemeEnd += 3;
+		}
+		else if ((scheme.length() > 3) && (scheme.substr(0, 1) == L":"))
+		{
+			result.WScheme = wstring(schemeStart, schemeEnd);
+			schemeEnd += 1;
+		}
+		else
+		{
+			schemeEnd = uri.begin();
+		}
+		if (!IsValidScheme(result.WScheme))
+		{
+			return ParseUri(InvalidSchemeName);
+		}
+	}
+	else
+	{
+		schemeEnd = uri.begin();
 		return ParseUri(InvalidSchemeName);
 	}
 
-	//transform(result.Scheme.begin(), result.Scheme.end(), result.Scheme.begin, ::tolower);
-
-	curStr = localStr + 1;
-
-	if (*curStr++ != '/')
+	// user info
+	iterator_t userInfoEnd = find(schemeEnd, uriEnd, L'@');
+	if (userInfoEnd != uriEnd)
 	{
-		return ParseUri(NoDoubleSlash);
-	}
-	if (*curStr++ != '/')
-	{
-		return ParseUri(NoDoubleSlash);
-	}
+		wstring userFullInfo = wstring(schemeEnd, userInfoEnd);
 
+		vector<wstring> userinfo = Split<wstring>(userFullInfo, L":");
 
-	bool hasUserName = false;
-
-	localStr = curStr;
-
-	while (*localStr)
-	{
-		if (*localStr == '@')
+		if (userinfo.size() > 1)
 		{
-			hasUserName = true;
-			break;
+			result.WUserName = userinfo[0];
+			result.WPassword = userinfo[1];
 		}
-		else if (*localStr == '/')
-		{
-			hasUserName = false;
-			break;
-		}
+		else
+			result.WUserName = userinfo[0];
 
-		localStr++;
+		userInfoEnd += 1;
 	}
 
-	localStr = curStr;
+	iterator_t hostStart = userInfoEnd;
+	iterator_t pathStart = find(hostStart, uriEnd, L'/');
 
-	if (hasUserName)
+	iterator_t hostEnd = find(userInfoEnd,
+		(pathStart != uriEnd) ? pathStart : fragmentStart,
+		L':');
+
+	result.WHost = wstring(hostStart, hostEnd);
+
+
+	// port
+	if ((hostEnd != uriEnd) && ((&*(hostEnd))[0] == L':'))
 	{
-		while (*localStr && *localStr != ':' && *localStr != '@') localStr++;
-
-		result.UserName = std::string(curStr, localStr - curStr);
-
-		curStr = localStr;
-
-		if (*curStr == ':')
-		{
-			curStr++;
-
-			localStr = curStr;
-
-			while (*localStr && *localStr != '@') localStr++;
-
-			result.Password = std::string(curStr, localStr - curStr);
-
-			curStr = localStr;
-		}
-
-		if (*curStr != '@')
-		{
-			return ParseUri(NoAtSign);
-		}
-
-		curStr++;
+		++hostEnd;
+		iterator_t portEnd = (pathStart != uriEnd) ? pathStart : fragmentStart;
+		result.WPort = wstring(hostEnd, portEnd);
 	}
 
-	bool hasBracket = (*curStr == '[');
-
-	localStr = curStr;
-
-	while (*localStr)
+	// path
+	if (pathStart != uriEnd)
 	{
-		if (hasBracket && *localStr == ']')
-		{
-			localStr++;
-			break;
-		}
-		else if (!hasBracket && (*localStr == ':' || *localStr == '/'))
-		{
-			break;
-		}
-
-		localStr++;
+		result.WPath = wstring(pathStart, queryStart);
+		queryStart += 1;
 	}
 
-	result.Host = std::string(curStr, localStr - curStr);
-
-	curStr = localStr;
-
-	if (*curStr == ':')
+	// query
+	if (queryStart != uriEnd)
 	{
-		curStr++;
-
-		localStr = curStr;
-
-		while (*localStr && *localStr != '/') localStr++;
-
-		result.Port = std::string(curStr, localStr - curStr);
-
-		curStr = localStr;
+		result.WQuery = wstring(queryStart, fragmentStart);
+		fragmentStart += 1;
 	}
 
-	if (!*curStr)
+	// fragment
+	if (fragmentStart != uriEnd)
 	{
-		return ParseUri(UnexpectedEndOfLine);
-	}
-
-	if (*curStr != '/')
-	{
-		return ParseUri(NoSlash);
-	}
-
-	curStr++;
-
-	localStr = curStr;
-
-	while (*localStr && *localStr != '#' && *localStr != '?') localStr++;
-
-	result.Path = std::string(curStr, localStr - curStr);
-
-	curStr = localStr;
-
-	if (*curStr == '?')
-	{
-		curStr++;
-
-		localStr = curStr;
-
-		while (*localStr && *localStr != '#') localStr++;
-
-		result.Query = std::string(curStr, localStr - curStr);
-
-		curStr = localStr;
-	}
-
-	// check for fragment
-	if (*curStr == '#')
-	{
-		// skip '#'
-		curStr++;
-
-		// read fragment
-		localStr = curStr;
-
-		while (*localStr) localStr++;
-
-		result.Fragment = std::string(curStr, localStr - curStr);
-
-		curStr = localStr;
+		result.WFragment = wstring(fragmentStart, uriEnd);
 	}
 
 	result.ErrorCode = Ok;
-
 	return result;
+
 }

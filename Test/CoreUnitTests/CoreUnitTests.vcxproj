@@ -90,6 +90,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\Lib\gtest\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
