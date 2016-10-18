@@ -26,11 +26,10 @@ namespace UnitTests {
 		void When_ParsingUri_Should_Return_Succeess(const string& uri) const
 		{
 			//Arrange
-			UriParser::ParseUri res;
-
+			
 
 			//Act
-			//res = _parseUri.Parse("a");
+			auto res = _parseUri.Parse(uri);
 
 
 			//Assert
@@ -42,10 +41,19 @@ namespace UnitTests {
 			//Arrange
 			bool res = true;
 
+			auto validScheme = _parseUri.IsValidScheme(schemeName);
+
 			//Act
 
 			//Assert
 			ASSERT_EQ(true, res);
+		}
+
+		void When_ParsingUri_Should_Check_Default_Constructor()
+		{
+			bool res = _parseUri.IsValid();
+
+			ASSERT_EQ(false, res);
 		}
 	};
 
@@ -63,9 +71,17 @@ namespace UnitTests {
 
 	TEST_F(UriParsingUnitTests, When_ParsingUri_Should_Valid_schemeName)
 	{
-		When_ParsingUri_Should_Valid_schemeName(string("a"));
-		When_ParsingUri_Should_Valid_schemeName(string("b"));
-		When_ParsingUri_Should_Valid_schemeName(string("c"));
-		When_ParsingUri_Should_Valid_schemeName(string("d"));
+		When_ParsingUri_Should_Valid_schemeName(uri1);
+		When_ParsingUri_Should_Valid_schemeName(uri2);
+		When_ParsingUri_Should_Valid_schemeName(uri3);
+		When_ParsingUri_Should_Valid_schemeName(uri4);
+		When_ParsingUri_Should_Valid_schemeName(uri5);
+		When_ParsingUri_Should_Valid_schemeName(uri6);
+		When_ParsingUri_Should_Valid_schemeName(uri7);
+	}
+
+	TEST_F(UriParsingUnitTests, When_ParsingUri_Should_Check_Default_Constructor)
+	{
+		When_ParsingUri_Should_Check_Default_Constructor();
 	}
 }

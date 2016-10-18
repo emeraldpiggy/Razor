@@ -1,11 +1,12 @@
 #include "stdafx.h"
+#include "RazorUriCore.h"
 #include "ParseUri.h"
 
 #include <algorithm>
 #include <cstring>
 #include <stdlib.h>
 
-static bool isValidScheme(const string& schemeName)
+bool UriParser::ParseUri::IsValidScheme(const string& schemeName)
 {
 	for (auto s : schemeName)
 	{
@@ -17,10 +18,10 @@ static bool isValidScheme(const string& schemeName)
 	return true;
 }
 
+
 UriParser::ParseUri UriParser::ParseUri::Parse(const string& uri)
 {
-UriParser:ParseUri result;
-
+	UriParser::ParseUri result;
 	const char* curStr = uri.c_str();
 
 	const char* localStr = strchr(curStr, ':');
@@ -31,12 +32,12 @@ UriParser:ParseUri result;
 
 	result.Scheme = string(curStr, localStr - curStr);
 
-	if (!isValidScheme(result.Scheme))
+	if (!IsValidScheme(result.Scheme))
 	{
 		return ParseUri(InvalidSchemeName);
 	}
 
-	transform(result.Scheme.begin(), result.Scheme.end(), result.Scheme.begin, ::tolower);
+	//transform(result.Scheme.begin(), result.Scheme.end(), result.Scheme.begin, ::tolower);
 
 	curStr = localStr + 1;
 
@@ -52,7 +53,7 @@ UriParser:ParseUri result;
 
 	bool hasUserName = false;
 
-	const char* localStr = curStr;
+	localStr = curStr;
 
 	while (*localStr)
 	{

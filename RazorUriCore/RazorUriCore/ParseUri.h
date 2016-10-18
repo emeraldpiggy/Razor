@@ -33,6 +33,8 @@ namespace UriParser
 
 		bool IsValid() const { return ErrorCode == Ok; }
 
+		static bool IsValidScheme(const string& schemeName);
+
 		static ParseUri Parse(const string& uri);
 
 	private:
