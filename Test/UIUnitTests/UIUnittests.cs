@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using RazorUI;
 
 namespace UIUnitTests
 {
@@ -17,9 +18,18 @@ namespace UIUnitTests
             
         }
 
+        [Test]
         public void If_geturiFromCore_should_display()
         {
-            
+
+            //Arrange
+            var mainwindow = new MainWindow();
+
+            //Act
+            string res = mainwindow.GetScheme();
+
+            //Assert
+            Assert.AreEqual("Wrong Uri",res);
         }
     }
 }
